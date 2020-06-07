@@ -6,6 +6,8 @@ import { TrackballControls } from 'three-trackballcontrols-ts';
 let camera: THREE.PerspectiveCamera, scene: THREE.Scene, renderer: THREE.Renderer, controls: TrackballControls;
 
 let robotParentMesh = new THREE.Mesh();
+let wheels: Array<THREE.Mesh> = [];
+let wheelTransforms: Array<THREE.Euler> = [];
 
 window.onload = main;
 
@@ -46,8 +48,17 @@ function init() {
   let loader = new GLTFLoader();
   loader.load(
     'assets/models/robot.gltf',
-    gtlf => {
-      robotParentMesh.add(gtlf.scene);
+    gltf => {
+      robotParentMesh.add(gltf.scene);
+      
+      gltf.scene.traverse(node => {
+        if (node instanceof THREE.Mesh) {
+            if (node.name.startsWith("Wheel")) {
+                wheels.push(node);
+                wheelTransforms.push(new THREE.Euler(0.0, 0.0, 0.0));
+            }
+        }
+      })
     },
     undefined,
     error => {
@@ -73,6 +84,14 @@ function animate(time: number) {
   requestAnimationFrame(animate);
 
   controls.update();
+  for (var i = 0; i < wheels.length; ++i) {
+      // Rotation around the wheel axis
+      wheelTransforms[i].z += 0.5;
+
+      // Rotation for turning
+      wheelTransforms[i].y += 0.01;
+      wheels[i].setRotationFromEuler(wheelTransforms[i]);
+  }
 
   renderer.render(scene, camera);
 }
